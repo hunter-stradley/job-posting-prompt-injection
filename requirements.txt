@@ -1,0 +1,15 @@
+# Core detection (jd_injection_scanner.py, detect.py) is stdlib-only — no install needed.
+#
+# The optional layers below enable additional detection paths. They are
+# feature-gated: the tools skip gracefully (printing an install hint) when a
+# dependency is absent, so you only need what you intend to use.
+
+# Render-gated detection (render_worker_hidden.py): headless-browser computed-style
+# extraction of effectively-hidden text. Required for the "tripwire" pass.
+playwright>=1.40        # then run: playwright install chromium
+
+# Optional enrichment in detect.py / the base scanner (all individually gated):
+# pdfminer.six>=20221105   # inspect linked PDF attachments
+# python-docx>=1.1         # inspect linked DOCX attachments
+# pytesseract>=0.3.10      # OCR image-only postings (also needs the tesseract binary)
+# Pillow>=10.0             # image handling for OCR

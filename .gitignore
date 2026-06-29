@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv-*/
+venv/
+env/
+
+# OS
+.DS_Store
+
+# Scan artifacts / caches (never commit raw results or HTTP caches)
+cache/
+*.cache
+scan_results.json
+*_scan.json
+*_scan.csv
+*.log
+
+# Secrets — never commit
+*.env
+.env
+judge.env
+*.key
+*credentials*

@@ -12,10 +12,9 @@ scanner misses:
   * <meta>/OpenGraph tag injection
   * the high-precision "hidden text that is also AI-directed" combination
 
-Feature-gated optional paths (enhance detection when deps/keys exist, otherwise skipped):
-  * headless render-vs-raw diff           (playwright)
+Feature-gated optional paths (enhance detection when deps exist, otherwise skipped):
+  * headless render-vs-raw diff           (playwright; see render_worker_hidden.py / scan.py render)
   * linked PDF / DOCX / image OCR         (pdfminer.six / python-docx / pytesseract)
-  * LLM-judge semantic verdict            (ANTHROPIC_API_KEY)
 
 Severity = payload intent; confidence = evasion technique. Score 0-100 combines them.
 """

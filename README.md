@@ -33,11 +33,16 @@ docs/
   methodology.md    How detection works: static scan + render-gated "tripwire" pass; ethics
   findings.md       Anonymized aggregate results across ~14,000 postings
 scanner/
+  scan.py                   Unified CLI: file / url / board / render subcommands
   jd_injection_scanner.py   Stdlib-only static scanner (CSS hiding, Unicode, comments, attrs, JSON-LD)
   detect.py                 Upgraded detector: semantic AI-addressed layer, encoded payloads,
                             pseudo-element/meta carriers, severity×confidence scoring
   render_worker_hidden.py   Playwright worker: computed-style effective-visibility extractor
+  httpclient.py             Polite, cached, rate-limited stdlib HTTP core
+  ats.py                    Bulk connectors for public ATS content APIs (you supply the token)
+  sweep.py                  Drive ats→detect across many boards from a manifest/TSV → JSON+CSV
   corpus/                   Synthetic test fixtures, one per vector (no real postings)
+tests/                      pytest regression suite over the corpus + HTTP core
 ```
 
 ## Headline finding
@@ -64,29 +69,55 @@ Two complementary layers ([details](docs/methodology.md)):
    injection, and JS-injected text — and it's what separates a true **hidden tripwire** from a
    merely **visible notice**.
 
-## Quickstart
+## Usage
 
-The core scanner is **stdlib-only** — no install required:
+The core is **stdlib-only** — no install required. `scan.py` is the single entry point:
 
 ```bash
-# scan a single posting URL or a local HTML file
-python3 scanner/jd_injection_scanner.py --url https://example.com/jobs/123
-python3 scanner/jd_injection_scanner.py --file scanner/corpus/white.html
+cd scanner
 
-# run the upgraded detector's self-test (synthetic cases)
-python3 scanner/detect.py
+# static scan a local HTML file or a live posting URL
+python3 scan.py file corpus/white.html
+python3 scan.py url https://example.com/jobs/123
+
+# scan a whole board via its public ATS content API (you supply the board's own token).
+# ats in: greenhouse | ashby | lever | recruitee | smartrecruiters | workday | workable
+python3 scan.py board greenhouse <board-token>
+
+# render-gated "tripwire" pass (needs a browser; see below)
+python3 scan.py render https://example.com/jobs/123
 ```
 
-Render-gated pass (optional, needs a browser):
+Exit codes are CI/hook-friendly: `0` clean, `1` REVIEW / hidden-text, `2` CONFIRMED / TRIPWIRE,
+`3` could-not-fetch/render. Modern boards render the JD client-side, so prefer `board` (reads the
+ATS **content API** — the same text an agent or screener ingests) over `url` (raw page fetch).
+
+**Bulk survey** across many boards — supply your own targets (the repo ships no company lists):
+
+```bash
+# TSV on stdin: "ats<TAB>token<TAB>label"
+printf 'greenhouse\t<token>\tExample Co\n' | python3 sweep.py --out results
+# or a JSON manifest: [{"company","ats","token"}, ...]
+python3 sweep.py --manifest boards.json --out results
+# -> results.json (summary + hits) and results.csv (one row per finding)
+```
+
+**Render-gated pass** (optional, needs a headless browser):
 
 ```bash
 pip install playwright && playwright install chromium
-python3 scanner/render_worker_hidden.py https://example.com/jobs/123
-# -> one JSON line: {"ok":true,"hidden":[{reason,text}],"pseudo":[...],"visible_len":N}
 ```
 
-See [`requirements.txt`](requirements.txt) for the optional PDF/DOCX/OCR enrichment paths (all
-feature-gated — the tools skip gracefully when a dependency is absent).
+The `render` subcommand drives [`render_worker_hidden.py`](scanner/render_worker_hidden.py), which
+computes per-element effective visibility (incl. text-vs-background contrast) and returns the text
+a human never sees; it degrades gracefully with an install hint if Playwright is absent. See
+[`requirements.txt`](requirements.txt) for the other optional (feature-gated) PDF/DOCX/OCR paths.
+
+**Tests:**
+
+```bash
+pip install pytest && python3 -m pytest      # 21 offline tests, no network/browser
+```
 
 ## Ethics
 

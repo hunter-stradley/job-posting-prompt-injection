@@ -1,5 +1,7 @@
-"""Make the stdlib-only modules in scanner/ importable from the test suite."""
+"""Make the modules in scanner/ and harness/ importable from the test suite."""
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "scanner"))
+_root = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(_root, "scanner"))
+sys.path.insert(0, os.path.join(_root, "harness"))

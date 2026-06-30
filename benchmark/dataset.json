@@ -1,0 +1,23 @@
+{
+  "about": "Labeled, fully-synthetic posting-injection benchmark. Each case points at a corpus/ fixture and records the vector, whether it is malicious, and the label the conservative classifier is expected to assign (null = a real vector the high-precision classifier intentionally leaves unlabeled, surfaced only via score/findings). No real postings.",
+  "cases": [
+    {"id": "white",          "file": "white.html",          "vector": "css_white_on_white",   "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "displaynone",    "file": "displaynone.html",    "vector": "display_none",         "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "tiny",           "file": "tiny.html",           "vector": "font_size_zero",       "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "offscreen",      "file": "offscreen.html",      "vector": "offscreen",            "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "hiddenform",     "file": "hiddenform.html",     "vector": "hidden_form_field",    "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "jsonld",         "file": "jsonld.html",         "vector": "json_ld_keyword",      "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "jsonld_semantic","file": "jsonld_semantic.html","vector": "json_ld_semantic",     "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "tagblock",       "file": "tagblock.html",       "vector": "unicode_tag_block",    "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "varselector",    "file": "varselector.html",    "vector": "variation_selector",   "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "sronly_evil",    "file": "sronly_evil.html",    "vector": "sr_only_instruction",  "malicious": true,  "expected_label": "CONFIRMED"},
+    {"id": "homoglyph",      "file": "homoglyph.html",      "vector": "homoglyph",            "malicious": true,  "expected_label": "REVIEW"},
+    {"id": "greek_homoglyph","file": "greek_homoglyph.html","vector": "homoglyph",            "malicious": true,  "expected_label": "REVIEW"},
+    {"id": "attr",           "file": "attr.html",           "vector": "attribute_injection",  "malicious": true,  "expected_label": null},
+    {"id": "comment",        "file": "comment.html",        "vector": "html_comment",         "malicious": true,  "expected_label": null},
+    {"id": "datastar",       "file": "datastar.html",       "vector": "data_attribute",       "malicious": true,  "expected_label": null},
+    {"id": "bidi",           "file": "bidi.html",           "vector": "bidi_control",         "malicious": true,  "expected_label": null},
+    {"id": "zerowidth",      "file": "zerowidth.html",      "vector": "zero_width",           "malicious": true,  "expected_label": null},
+    {"id": "sronly_benign",  "file": "sronly_benign.html",  "vector": "benign_accessibility", "malicious": false, "expected_label": null}
+  ]
+}

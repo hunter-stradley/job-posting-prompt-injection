@@ -8,8 +8,12 @@
 # extraction of effectively-hidden text. Required for the "tripwire" pass.
 playwright>=1.40        # then run: playwright install chromium
 
-# Optional enrichment in detect.py / the base scanner (all individually gated):
-# pdfminer.six>=20221105   # inspect linked PDF attachments
-# python-docx>=1.1         # inspect linked DOCX attachments
-# pytesseract>=0.3.10      # OCR image-only postings (also needs the tesseract binary)
-# Pillow>=10.0             # image handling for OCR
+# Multimodal & document detection (multimodal.py) -- all individually gated:
+# pytesseract>=0.3.10      # OCR image-only postings (also needs the `tesseract` binary)
+# Pillow>=10.0             # image handling for OCR + LSB-stego heuristic
+# pdfminer.six>=20221105   # PDF hidden-text (white/tiny/off-page) + metadata
+# python-docx>=1.1         # DOCX hidden/vanish/white runs + core properties
+
+# Tests / benchmark:
+# pytest>=7.0              # run the suite (python3 -m pytest)
+# reportlab>=4.0           # only needed to GENERATE synthetic PDF fixtures in the test suite

@@ -21,9 +21,10 @@ CORPUS = os.path.join(os.path.dirname(__file__), os.pardir, "scanner", "corpus")
 CONFIRMED = [
     "white.html", "displaynone.html", "tiny.html", "offscreen.html",
     "hiddenform.html", "jsonld.html", "tagblock.html", "sronly_evil.html",
+    "varselector.html", "jsonld_semantic.html",
 ]
 # Mixed-script / homoglyph folding surfaces as a REVIEW (medium confidence).
-REVIEW = ["homoglyph.html"]
+REVIEW = ["homoglyph.html", "greek_homoglyph.html"]
 # Real vectors the detector SEES (findings + score) but classify() leaves unlabeled by design.
 DETECTED_UNLABELED = ["attr.html", "comment.html", "datastar.html", "bidi.html", "zerowidth.html"]
 # Benign controls -> low score, no label.

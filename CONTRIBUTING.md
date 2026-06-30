@@ -31,10 +31,15 @@ pip install playwright && playwright install chromium   # render-gated pass (opt
 ## Running the suite
 
 ```bash
-python3 -m pytest            # offline: corpus regression + HTTP-core unit tests
-python3 scanner/detect.py    # detector self-test on synthetic cases
-python3 scanner/httpclient.py  # HTTP-core self-test (fake clock, no network)
+python3 -m pytest               # offline: detectors, multimodal, vectors, harness, benchmark, sanitizer, SARIF
+python3 scanner/detect.py       # detector self-test on synthetic cases
+python3 scanner/httpclient.py   # HTTP-core self-test (fake clock, no network)
+python3 harness/harness_run.py  # simulated agent-hijack metrics
+python3 benchmark/run_benchmark.py  # detector precision/recall/F1 -> benchmark/results.md
 ```
+
+Multimodal/document tests `importorskip` their optional deps (`pytesseract`+`tesseract`,
+`pdfminer.six`, `python-docx`, `reportlab`), so they run in CI and skip on a stdlib-only box.
 
 ## Adding a detection vector
 

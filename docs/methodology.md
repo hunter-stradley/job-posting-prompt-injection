@@ -102,6 +102,19 @@ to hide anything.
 
 ---
 
+## Detection is triage, not a guarantee
+
+This toolkit is a **detection-based** defense. Published 2026 work shows detection/guardrail layers
+are bypassable (commercial prompt-injection detectors have been evaded at up to 100% via character
+injection; a systematization-of-knowledge study found no guardrail category reliably stops
+injection). They lower risk and catch the obvious cases — worthwhile — but they are a *filter*, not
+a proof. The durable fix for an agent that ingests untrusted job postings is **architectural**:
+capability-based / dual-LLM designs (CaMeL, "Defeating Prompt Injections by Design") and agent
+sandboxing that deny the agent any ability to act on injected instructions, with human-in-the-loop
+for sensitive actions. The [sanitizer](../scanner/sanitize.py) here applies the OWASP-recommended
+data-marking / spotlighting mitigation as defense-in-depth, not as a guarantee. See
+[roadmap.md](roadmap.md) for the 2026 trajectory and citations.
+
 ## Honest limits
 
 - **Sample, not census.** The render pass covers targeted, high-likelihood tiers; a full re-render

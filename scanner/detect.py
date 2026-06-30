@@ -134,7 +134,30 @@ def detect(jd_html, channel="jd"):
             seg = folded[max(0, m.start()-30):m.end()+30].replace("\n", " ").strip()
             findings.append(("homoglyph_keyword", seg[:200], "medium", "medium"))
 
+    # 9) structured-data semantic pass: parse JSON-LD and walk ALL nested string values,
+    #    matching the semantic (AI-addressed) layer too -- not just the base keyword sweep.
+    for m in re.finditer(r"<script[^>]+ld\+json[^>]*>(.*?)</script>", jd_html, re.S | re.I):
+        try:
+            data = json.loads(html.unescape(m.group(1).strip()))
+        except (ValueError, TypeError):
+            continue
+        for val in _walk_strings(data):
+            if S.INJECTION_RE.search(val) or SEMANTIC_RE.search(val):
+                findings.append(("json_ld", val[:200], "high", "high"))
+
     return findings
+
+
+def _walk_strings(obj):
+    """Yield every string value in a nested JSON-LD structure."""
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _walk_strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _walk_strings(v)
 
 
 _JUDGE_PREFILTER_RE = re.compile(
@@ -165,9 +188,16 @@ def classify(findings):
     """Collapse to (label, top_finding). Only strong/precise signals -> CONFIRMED."""
     strong = [f for f in findings if f[0] in (
         "hidden_ai_instruction", "css_pseudo_content", "base64_payload", "hex_payload",
-        "unicode_tag_block", "zero_width", "json_ld", "css_hidden_text") and f[2] in ("high", "critical")]
+        "unicode_tag_block", "zero_width", "json_ld", "css_hidden_text",
+        # multimodal / document carriers (see multimodal.py): hidden-from-human + AI-directed
+        "image_ai_instruction", "pdf_hidden_instruction", "docx_hidden_instruction",
+        "variation_selector") and f[2] in ("high", "critical")]
     if strong:
         return "CONFIRMED", strong[0]
+    # best-effort, lower-confidence carriers -> REVIEW (e.g. LSB steganography heuristic)
+    review_extra = [f for f in findings if f[0] in ("image_stego", "ingestion_diff")]
+    if review_extra:
+        return "REVIEW", review_extra[0]
     semantic = [f for f in findings if f[0] in ("semantic_instruction", "meta_tag", "homoglyph_keyword")]
     # require the semantic hit to look instruction-like, not stray prose
     for f in semantic:

@@ -42,12 +42,34 @@ INJECTION_PATTERNS = [
 ]
 INJECTION_RE = re.compile("|".join(INJECTION_PATTERNS), re.IGNORECASE)
 
-# Minimal homoglyph fold (extend with TR39 confusables.txt for full coverage)
+# Homoglyph fold. NFKC (applied in fold_homoglyphs) already folds fullwidth Latin and the
+# mathematical-alphanumeric blocks to ASCII; NFKC does NOT fold Cyrillic/Greek lookalikes, so we
+# map the common ones explicitly (the high-value Latin confusables from Unicode TR39). For full
+# coverage, load TR39 confusables.txt; this curated subset covers the letters used to spoof the
+# injection keywords.
 HOMOGLYPHS = {
-    "\u0430":"a","\u0435":"e","\u043e":"o","\u0440":"p","\u0441":"c",
-    "\u0445":"x","\u0443":"y","\u0456":"i","\u0458":"j","\u03bf":"o",
-    "\u0391":"A","\u0392":"B","\u0395":"E","\u039f":"O","\uff41":"a",
+    # Cyrillic lowercase -> Latin
+    "\u0430":"a","\u0435":"e","\u043e":"o","\u0440":"p","\u0441":"c","\u0445":"x","\u0443":"y",
+    "\u0456":"i","\u0458":"j","\u0455":"s","\u051b":"q","\u051d":"w","\u0501":"d","\u0261":"g",
+    "\u04bb":"h","\u0269":"i","\u026a":"i",
+    # Cyrillic uppercase -> Latin
+    "\u0410":"A","\u0412":"B","\u0415":"E","\u041a":"K","\u041c":"M","\u041d":"H","\u041e":"O",
+    "\u0420":"P","\u0421":"C","\u0422":"T","\u0423":"Y","\u0425":"X","\u0406":"I","\u0408":"J",
+    "\u0405":"S","\u0397":"H",
+    # Greek lowercase -> Latin
+    "\u03bf":"o","\u03bd":"v","\u03c1":"p","\u03b1":"a","\u03b9":"i","\u03ba":"k","\u03c5":"u",
+    # Greek uppercase -> Latin
+    "\u0391":"A","\u0392":"B","\u0395":"E","\u0396":"Z","\u0399":"I","\u039a":"K","\u039c":"M",
+    "\u039d":"N","\u039f":"O","\u03a1":"P","\u03a4":"T","\u03a5":"Y","\u03a7":"X",
+    # a couple of fullwidth (NFKC handles most, kept as belt-and-suspenders)
+    "\uff41":"a","\uff4f":"o",
 }
+
+# Variation-selector smuggling: arbitrary bytes hidden as VS1-16 (U+FE00-FE0F) + VS17-256
+# (U+E0100-E01EF), one selector per byte. Invisible, but tokenizers retain them. (Technique
+# popularized by Paul Butler, 2025.)
+VARSEL_LOW  = range(0xFE00, 0xFE10)     # bytes 0-15
+VARSEL_HIGH = range(0xE0100, 0xE01F0)   # bytes 16-255
 
 def decode_tag_block(s):
     out=[]
@@ -57,6 +79,17 @@ def decode_tag_block(s):
             base=cp-0xE0000
             if 0x20<=base<0x7F: out.append(chr(base))
     return "".join(out)
+
+def decode_variation_selectors(s):
+    """Decode VS-smuggled bytes: VS1-16 -> 0..15, VS17-256 -> 16..255; UTF-8 decode."""
+    out=bytearray()
+    for ch in s:
+        cp=ord(ch)
+        if cp in VARSEL_LOW:
+            out.append(cp-0xFE00)
+        elif cp in VARSEL_HIGH:
+            out.append(cp-0xE0100+16)
+    return out.decode("utf-8","replace") if out else ""
 
 def strip_zero_width(s):
     return "".join(c for c in s if ord(c) not in ZERO_WIDTH and ord(c) not in BIDI_CTRL
@@ -160,6 +193,16 @@ def unicode_scan(raw):
         dec=decode_tag_block(raw)
         f.append(("unicode_tag_block", f"decoded='{dec[:200]}'",
                   "high" if (INJECTION_RE.search(dec) or dec) else "medium"))
+    # variation-selector smuggling. A lone VS16 is normal on emoji, so require a run of >=4
+    # decoding to a printable payload before flagging, to avoid emoji false positives.
+    vs=[c for c in raw if ord(c) in VARSEL_LOW or ord(c) in VARSEL_HIGH]
+    if len(vs)>=4:
+        dec=decode_variation_selectors(raw)
+        printable=re.sub(r"[^\x20-\x7e]","",dec)
+        if len(printable)>=4:
+            f.append(("variation_selector",
+                      f"{len(vs)} variation selectors; decoded='{printable[:160]}'",
+                      "high" if INJECTION_RE.search(printable) else "medium"))
     folded=fold_homoglyphs(raw)
     for line in raw.splitlines():
         sc=scripts_in(line)
